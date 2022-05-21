@@ -1,0 +1,165 @@
+/* body{
+  background: url("./Components/images/attack_on_titan.png") bottom center no-repeat ;
+  fill: rgb(0, 0, 0);
+  
+} */
+
+
+
+.chat-box {
+  margin-bottom: 20px;
+  padding: 5%;
+  height: 10%;
+}
+
+.container {
+  margin: 1% auto;
+  background: rgb(85, 82, 82);
+  padding: 2px;
+  border-radius: 7px;
+  height: 50%;
+}
+
+.profile-image {
+  width: 50px;
+  height: 50px;
+  border-radius: 40px;
+}
+
+.settings-tray {
+  background: rgb(0, 0, 0);
+  padding: 10px 15px;
+  border-radius: 7px;
+}
+
+.input-box {
+  background: #dce1e5;
+  padding: 10px 100px;
+  width: 85%;
+  margin-left: 10px;
+}
+
+input {
+  border: none;
+  border-radius: 30px;
+  width: 80%;
+}
+
+.send-button-chat {
+  width: 10%;
+
+}
+
+
+.chat-bar {
+  padding: 10px 15px;
+  display: flex;
+  vertical-align: baseline;
+  background: rgba(255, 255, 255, 0);
+  transition: .3s ease;
+}
+
+.chat-bubble {
+  padding: 10px 14px;
+  background: rgb(0, 0, 0);
+  margin: 10px 10%;
+  border-radius: 9px;
+  position: relative;
+  animation: fadeIn 1s ease-in;
+  overflow-wrap: normal;
+  float: right;
+}
+
+.chat-bubble--right {
+  padding: 10px 10px;
+  background: #d63b3b;
+  color: white;
+  margin: 5px 20px;
+  border-radius: 20px;
+  position: relative;
+  max-width: 50%;
+  animation: fadeIn 1s ease-in;
+  word-break: normal;
+  float: right;
+  max-width: 70%;
+
+}
+
+.chat-bubble--left {
+  padding: 10px 14px;
+  background: rgb(205, 205, 216);
+  margin: 10px 30px;
+  border-radius: 9px;
+  position: relative;
+  animation: fadeIn 1s ease-in;
+  word-break: normal;
+  float: left;
+  max-width: 50%;
+
+}
+
+/* @keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+} */
+
+.media-container {
+  margin: 0;
+  margin-bottom: 4%;
+  padding: 15px;
+  position: relative;
+  float: bottom;
+  border-radius: 10px;
+  background-color: rgb(115, 117, 121);
+}
+
+.media-container-btn {
+  margin-top: 1%;
+}
+
+.btn-light {
+  margin-top: 10px;
+  float: right;
+}
+
+.media-button {
+  border-radius: 9px;
+  margin: 4px;
+}
+
+.send-button {
+  margin-right: 5px;
+  background: #d63b3b;
+  float:right;
+  margin-top: 3px;
+}
+
+.chat-container {
+  background-color: rgb(0, 0, 0);
+}
+
+.image-container{
+  max-width: 95%;  
+  position: relative;
+  padding: 5px;
+  float: top;
+  float: right;
+  margin-bottom: 5px;
+  max-height: 80%;
+  
+}
+
+.chat-box-tray {
+  background: rgb(115, 117, 121);
+  display: flex;
+  align-items: baseline;
+  padding: 5px 5px;
+  float:bottom;
+  margin-top: 1%;
+  outline: d63b3b;
+}
