@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState ,useEffect } from "react";
 import App, { buttonLogin } from "../App";
 import { Link,useNavigate } from "react-router-dom";
 import { Form, Button, Container, Col, Row, Card, Alert } from "react-bootstrap";
@@ -7,18 +7,51 @@ import background1 from '../images/background.jpg'
 
 
 
-export default function Chat() {
+export default function Login() {
+    //the data of tcontacts from the server
+    const[listUsers,setListUsers] = useState([]);
+    //the function to get the data from server
+    useEffect(async()=>{
+        const res = await fetch('http://localhost:5103/api/users');
+        const data = await res.json();
+        setListUsers(data);
+    },[]);
+
     let navigate = useNavigate();
     const [accessSuccess, setSuccess] = useState(false);
     const [accessFail, setFail] = useState(false);
     const [lUsers, setUsers] = useState(users);
 
+    const userInDbAlready = (userName) =>{
+        var toReturn = 0;
+        listUsers.map((value,index)=>{
+            if (value.username == userName){
+                toReturn = 1;
+            }
+    });
+        return toReturn;
+    }
+
+    const passwardCorrect = (userName,passwordCheck) =>{
+        var toReturn = 0;
+        listUsers.map((value,index)=>{
+            if (value.username == userName){
+                if(value.password == passwordCheck)
+                {
+                    toReturn = 1;
+                }
+            }
+    });
+        return toReturn;
+    }
+
+
     const  checkLogin = ()=> {
         let password = (document.getElementById("formPassword")).value;
         let username = (document.getElementById("formUsername")).value;
-        if (lUsers.has(username) && lUsers.get(username).at(0) == password) {
+        if (userInDbAlready(username) && passwardCorrect(username,password)) {
             setSuccess(true);
-            setTimeout(() => {navigate("/Chat");}, 500);
+            setTimeout(() => {navigate("/Chat", {state: {userLogin: username}});}, 500);
         }
         else {
             setFail(true);

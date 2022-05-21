@@ -1,6 +1,6 @@
 #Sagiv Antebi 318159282
 
-#Ben Ganon    318731007
+#BenG Ganon    318731007
 
 
 WhatsUp-Web-Clone Client Side:
@@ -28,9 +28,9 @@ To add users to your chat you can add one of this users - Uri, Omri, Sahar.
 
 First User:
 
-username: Ben
+username: BenG
 
-password: Ben123456
+password: BenG123456
 
 
 

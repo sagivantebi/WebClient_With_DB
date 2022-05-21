@@ -85,7 +85,7 @@ export default function App() {
 //       super();
 //       this.state = {loginActive: true};
 //       const userPass = new Map();
-//       userPass.set("Ben", "1234");
+//       userPass.set("BenG", "1234");
 //       userPass.set("Sagiv", "1111");
 //       this.state = {users : userPass};
 //       this.togglePage = this.togglePage.bind(this);

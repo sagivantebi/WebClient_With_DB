@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-let onlineArray = ["Ben"]
+let onlineArray = ["BenG"]
 
 
 export default onlineArray;

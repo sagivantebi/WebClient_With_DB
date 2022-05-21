@@ -18,17 +18,19 @@ import { getActiveElement } from '@testing-library/user-event/dist/utils';
 
 export default function Registration() {
     //the data of tcontacts from the server
-    const[list,setList] = useState([]);
+    const[listUsers,setListUsers] = useState([]);
     //the function to get the data from server
     useEffect(async()=>{
-        const res = await fetch('http://localhost:5103/api/contacts');
+        const res = await fetch('http://localhost:5103/api/users');
         const data = await res.json();
-        setList(data);
+        setListUsers(data);
     },[]);
+    
+
+
 
     const [file, setFile] = useState(defaultContact);
     const [fileType, setFileType] = useState();
-
     let navigate = useNavigate();
     const [userTable, setUserTable] = useState(users);
     //checks valid password
@@ -54,6 +56,16 @@ export default function Registration() {
 
     }
 
+    const UserInDbAlready = (userName) =>{
+        var toReturn = 0;
+        listUsers.map((value,index)=>{
+            if (value.username == userName){
+                toReturn = 1;
+            }
+    });
+        return toReturn;
+    }
+        
     //checks valid UserName or FullNAme
     const CheckUserName = (user) => {
         if (user.value.length < 3) {
@@ -63,9 +75,14 @@ export default function Registration() {
             return 'Username has to be at most than 20 letters'
         }
         //check if user already exist
-        if (users.has(user.value)) {
+        //With Db - WORKS!
+        if (UserInDbAlready(user.value) == 1){
             return 'Username is already taken'
         }
+        //no DB
+        // if (users.has(user.value)) {
+        //     return 'Username is already taken'
+        // }
         return true
     }
 
@@ -116,10 +133,23 @@ export default function Registration() {
             alert(validFullName)
             return
         }
-        let oldUsers = userTable
+        // NO DB
+        // let oldUsers = userTable
+        // oldUsers.set(Username.value.toString(), [PassWord.value.toString(), fullName.value.toString(), file, []])
 
-        oldUsers.set(Username.value.toString(), [PassWord.value.toString(), fullName.value.toString(), file, []])
-        setUserTable(oldUsers)
+        // With DB
+        let newUserToAdd = {username:Username.value.toString(),password:PassWord.value.toString(),nickName: fullName.value.toString(),image:"A",server:"s1",chats:null,contacts:null};
+        let oldUsers =  [...listUsers,newUserToAdd]; 
+        console.log(newUserToAdd) 
+        fetch('http://localhost:5103/api/users', {
+            method:'POST',
+            headers:{"Content-Type" : "application/json"},
+            body: JSON.stringify(newUserToAdd)
+        })
+        .then(function(response){return response.json()})
+        .then(function(data){
+        })
+        setListUsers(oldUsers);
         navigate("/Login");
 
     }
@@ -170,10 +200,10 @@ export default function Registration() {
 
                 <br />
                 <Link to="/Login">Back To Login Page</Link>
-                {list.map((value,index)=>{
+                {listUsers.map((value,index)=>{
                 return <div>
                     <h1>hello!</h1>
-                    <div>{value.server}</div>
+                    <div>{value.username}</div>
 
                     </div>
             })}

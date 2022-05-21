@@ -10,51 +10,48 @@ import record from '../images/record.png';
 import video from '../images/video.png';
 import heart from '../images/heart.png';
 import ChatLeftMessageProfile from './ChatLeftMessageProfile'
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Form, Button, Modal, Container, Col, Row, Card, Alert } from "react-bootstrap";
 import Message from "./Message";
 import ChatBox from "./ChatBox";
 import contacts from "./contacts";
 import "./Chat.css";
 import ChatListLeft from "./ChatListLeft";
-import users from "../Users";
+// import users from "../Users";
 import onlineArray from "./onlineArray";
 
 
 export default function Chat() {
 
+  const {state} = useLocation();
+  const userLogin = state.userLogin;
+  //  const userLogin = document.getElementById("formUsername").value;
 
-  const [online1, setOnline] = useState(onlineArray);
-  let usernameLogin;
-  try {
-    usernameLogin = (document.getElementById("formUsername")).value;
-    if (usernameLogin !== "" && online1.length < 2) {
-      setOnline([...online1, usernameLogin])
-    }
-  } catch (error) { }
-  let usernameToUse;
-  if (online1.length == 2) {
-    usernameToUse = online1.at(1);
-  }
-  else {
-    usernameToUse = online1.at(0);
-  }
+  //Before DB
+  // let chatHook = users.get(usernameToUse).at(3).sort(timeComp);
+  // for (let index = 0; index < chatHook.length; index++) {
+  //   chatHook.at(index).num = index;
+  // }
+  
+  //Trying DB
+  let urlSpecificUser = "http://localhost:5103/api/users/" + userLogin
 
-  const [boolChangeOnce, setBoolChangeOnce] = useState(false)
-  const [currChat, setCurrChat] = useState(0);
-
-  let chatHook = users.get(usernameToUse).at(3).sort(timeComp);
-  for (let index = 0; index < chatHook.length; index++) {
-    chatHook.at(index).num = index;
-  }
-  const [chats, setChats] = useState(chatHook);
-  //checks if the correct chat is insert into the chatbox to show
-  if (usernameToUse == online1.at(1) && users.get(usernameToUse).at(3) != chats) {
-    if (boolChangeOnce == false) {
-      setBoolChangeOnce(true)
-      setChats(users.get(usernameToUse).at(3))
-    }
-  }
+   //the data of tcontacts from the server
+   const[listUsers,setListUsers] = useState([]);
+   //the function to get the data from server
+   useEffect(async()=>{
+       const res = await fetch(urlSpecificUser);
+       const data = await res.json();
+      setListUsers(data);
+       
+   },[]);
+   let chats = (listUsers.chats);
+   let contacts = (listUsers.contacts);
+   let userImage = (listUsers.image);
+   const [currChat, setCurrChat] = useState(0);
+   console.log(listUsers);
+   console.log(chats);
+   console.log(contacts);
 
   const [render, setRender] = useState(false);
   const [errorType1, setErrorType1] = useState(false);
@@ -157,7 +154,7 @@ export default function Chat() {
       conts.unshift(newContact);
       // conts[currChat] = newContact;
       setRender(renderHelper);
-      setChats(conts);
+      // setChats(conts);
       
     }
   }
@@ -169,7 +166,7 @@ export default function Chat() {
   const addContactChat = () => {
     let username = (document.getElementById("usernameAdd"));
     //cheks if we already have a chat with this contact
-    if (username.value == usernameToUse) {
+    if (username.value == userLogin) {
       setErrorType3(true)
       setErrorType2(false)
       setErrorType1(false)
@@ -185,10 +182,10 @@ export default function Chat() {
       return null;
     }
 
-    if (users.has(username.value)) {
+    if (chats.has(username.value)) {
       setShow(false)
       let hisHistory = []
-      let newChatWithContact = { num: chats.length, name: username.value, img: users.get(username.value).at(2), time: getCurrentTimeString(), messageHistory: hisHistory, nickname: users.get(username.value).at(1) };
+      let newChatWithContact = { num: chats.length, name: username.value, img: chats.get(username.value).at(2), time: getCurrentTimeString(), messageHistory: hisHistory, nickname: chats.get(username.value).at(1) };
       let conts = chats;
       conts.unshift(newChatWithContact)
       userIsExist()
@@ -209,37 +206,25 @@ export default function Chat() {
   }
 
   const returnStatus = () => {
-    if (chats.length != 0) {
       return "Offline";
-    }
-    return "";
   }
 
   const returnNickname = () => {
-    if (chats.length != 0) {
-      return chats.at(currChat).nickname;
-    }
-    return "";
+    return userLogin;
   }
 
   const returnImg = () => {
-    if (chats.length != 0) {
-      return chats.at(currChat).img;
-    }
-    return defaultContact;
+    return userImage;
   }
 
   const returnMsg = () => {
-    if (chats.length != 0) {
+    if (contacts.length != 0) {
       return ChatBox(chats, currChat);
     }
     return "";
   }
   const returnImgUser = () => {
-    if (users.get(usernameToUse).at(2) == 0) {
-      return defaultContact;
-    }
-    return users.get(usernameToUse).at(2);
+    return defaultContact;
   }
 
 
@@ -252,20 +237,20 @@ export default function Chat() {
             <div className="settings-tray" style={{ background: "black", color: "white" }}>
               <img className="profile-image" src={returnImgUser()} alt="Profile img" />
               <span className="settings-tray--right">
-                <span className="material-icons">{users.get(usernameToUse).at(1)}</span>
+                <span className="material-icons">{userLogin}</span>
                 <Button variant="light" type="submit" onClick={handleShow}>+</Button>
               </span>
             </div>
             <div style={{ overflowY: "scroll", background: "black", color: "black", height: "450px", width: "100%", position: "relative" }}>
               <div>
-                {ChatListLeft(chats, setCurrChat)}
+                {/* {ChatListLeft(contacts, setCurrChat)} */}
               </div>
             </div>
           </div>
           <div class="col-md-8 chat-box" style={{ padding: "0px", marginTop: "10px" }}>
             <ChatBar status={returnStatus()} nickname={returnNickname()} img={returnImg()} />
             <div style={{ overflowY: "scroll", overflowX: "hidden", marginBottom: "5px", height: "300px", position: "relative" }}>
-              <div>{returnMsg()}</div>
+              {/* <div>{returnMsg()}</div> */}
             </div>
             <div class="row">
               <div class="col-12">
@@ -352,7 +337,7 @@ export default function Chat() {
             <button type="button" className="btn btn-danger" onClick={() => {
               let newContact = addContactChat();
               if (newContact != null) {
-                setChats(newContact)
+                // setChats(newContact)
               }
             }}>Start Chat</button>
           </div>
