@@ -140,7 +140,6 @@ export default function Registration() {
         // With DB
         let newUserToAdd = {username:Username.value.toString(),password:PassWord.value.toString(),nickName: fullName.value.toString(),image:"A",server:"s1",chats:null,contacts:null};
         let oldUsers =  [...listUsers,newUserToAdd]; 
-        console.log(newUserToAdd) 
         fetch('http://localhost:5103/api/users', {
             method:'POST',
             headers:{"Content-Type" : "application/json"},

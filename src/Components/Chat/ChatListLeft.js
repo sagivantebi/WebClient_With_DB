@@ -13,18 +13,20 @@ const sendLatsMessageTime = (chat) => {
 }
 
 //IF YOU WANT TI CHANGE IT BACK JUST GET RID OF THE sortChat(chats,setChat) AND POUT chats INSTEAD
-export default function ChatListLeft(chats, setChat) {
-    console.log(chats);
+export default function ChatListLeft(contacts, setChat) {
+    if(contacts == undefined){
+        return null;
+    }
     return (
         <div>
             <div>
-                {chats.sort(timeComp).map((chat) => (<ChatLeftMessageProfile
-                    num={chat.id} setChat={setChat} img={chat.img} nickname={chat.nickname} last={sendLatsMessage(chat)}
-                    time={sendLatsMessageTime(chat)} hist={chat.messageHistory} />))}
+                {contacts.map((value,index) => (<ChatLeftMessageProfile
+                    num={value.id} setChat={setChat} nickname={value.name} last={value.last}/>))}
             </div>
         </div>
     );
 }
+
 
 
 const timeComp = (a, b) => {

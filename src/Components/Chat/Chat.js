@@ -22,7 +22,7 @@ import onlineArray from "./onlineArray";
 
 
 export default function Chat() {
-
+  const [render, setRender] = useState(false);
   const {state} = useLocation();
   const userLogin = state.userLogin;
   //  const userLogin = document.getElementById("formUsername").value;
@@ -38,22 +38,37 @@ export default function Chat() {
 
    //the data of tcontacts from the server
    const[listUsers,setListUsers] = useState([]);
-   //the function to get the data from server
    useEffect(async()=>{
-       const res = await fetch(urlSpecificUser);
-       const data = await res.json();
-      setListUsers(data);
-       
-   },[]);
+  const res = await fetch(urlSpecificUser, {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Credentials': '*'
+    },
+    mode: 'cors',
+  })
+  let data = await res.json();
+   setListUsers(data)
+   },[render]);
+
+
+
+   //the function to get the data from server
+  //  useEffect(async()=>{
+  //      await fetch(urlSpecificUser)
+  //      .then( (response) =>  response.json())
+  //      .then( (json) => setListUsers(json))
+  //  },[]);
    let chats = (listUsers.chats);
    let contacts = (listUsers.contacts);
    let userImage = (listUsers.image);
+   let userNickName = (listUsers.nickName);
    const [currChat, setCurrChat] = useState(0);
-   console.log(listUsers);
    console.log(chats);
-   console.log(contacts);
+  
 
-  const [render, setRender] = useState(false);
+
   const [errorType1, setErrorType1] = useState(false);
   const [errorType2, setErrorType2] = useState(false);
   const [errorType3, setErrorType3] = useState(false);
@@ -140,23 +155,33 @@ export default function Chat() {
     sendMessage(newMessage);
 
   }
-  const sendMessage = (mess) => {
-    let message = mess;
-    if (message.content != '') {
-      let conts = chats;
-      let newContact = chats.at(currChat);
-      let history = newContact.messageHistory;
-      let newHistory = [...history, message];
-      newContact.messageHistory = newHistory;
-      newContact.time = mess.time;
-      newContact.num = conts.at(0).num - 1;
-      conts.splice(currChat, 1);
-      conts.unshift(newContact);
+
+  const sendMessage = async(mess) => {
+    // if (mess.content != '') {
+      let messageNew = {content:mess.content, userApi: userLogin}
+       await fetch('http://localhost:5103/api/contacts/' + currChat + '/messages', {
+        method:'POST',
+        headers:{"Content-Type" : "application/json"},
+        body: JSON.stringify(messageNew)
+    })
+    .then(function(response){return response})
+    .then(function(data){
+    })
+    setRender(renderHelper);
+      // let conts = chats;
+      // let newContact = chats.at(currChat);
+      // let history = newContact.messageHistory;
+      // let newHistory = [...history, message];
+      // newContact.messageHistory = newHistory;
+      // newContact.time = mess.time;
+      // newContact.num = conts.at(0).num - 1;
+      // conts.splice(currChat, 1);
+      // conts.unshift(newContact);
       // conts[currChat] = newContact;
-      setRender(renderHelper);
-      // setChats(conts);
+
+  //     // setChats(conts);
       
-    }
+  //   }
   }
   const checkUserExists = (name) => {
     return chats.find((el) => {
@@ -210,24 +235,50 @@ export default function Chat() {
   }
 
   const returnNickname = () => {
-    return userLogin;
+    if(contacts == undefined){
+      return ""
+    }
+    return contacts.map((value,index)=>{
+      if (value.id == currChat){
+        return value.name;
+      }
+});
+return ""
   }
 
+  const UserInDbAlready = (userName) =>{
+    var toReturn = 0;
+    listUsers.map((value,index)=>{
+        if (value.username == userName){
+            toReturn = 1;
+        }
+});
+    return toReturn;
+}
+
   const returnImg = () => {
-    return userImage;
+    return defaultContact;
   }
 
   const returnMsg = () => {
-    if (contacts.length != 0) {
-      return ChatBox(chats, currChat);
+    if (contacts == undefined) {
+      return "";
     }
-    return "";
+    return ChatBox(chats, currChat);
   }
+
+  
   const returnImgUser = () => {
     return defaultContact;
   }
 
 
+  const getMessage = () => {
+    let message = document.getElementById("chatIn").value;
+    document.getElementById("chatIn").value = '';
+    let newMessage = {content: message};
+    return newMessage;
+  }
 
   return (
     <div className="centerChat">
@@ -237,20 +288,20 @@ export default function Chat() {
             <div className="settings-tray" style={{ background: "black", color: "white" }}>
               <img className="profile-image" src={returnImgUser()} alt="Profile img" />
               <span className="settings-tray--right">
-                <span className="material-icons">{userLogin}</span>
+                <span className="material-icons">{userNickName}</span>
                 <Button variant="light" type="submit" onClick={handleShow}>+</Button>
               </span>
             </div>
             <div style={{ overflowY: "scroll", background: "black", color: "black", height: "450px", width: "100%", position: "relative" }}>
               <div>
-                {/* {ChatListLeft(contacts, setCurrChat)} */}
+                {ChatListLeft(contacts, setCurrChat)}
               </div>
             </div>
           </div>
           <div class="col-md-8 chat-box" style={{ padding: "0px", marginTop: "10px" }}>
             <ChatBar status={returnStatus()} nickname={returnNickname()} img={returnImg()} />
             <div style={{ overflowY: "scroll", overflowX: "hidden", marginBottom: "5px", height: "300px", position: "relative" }}>
-              {/* <div>{returnMsg()}</div> */}
+              <div>{returnMsg()}</div>
             </div>
             <div class="row">
               <div class="col-12">
@@ -278,7 +329,7 @@ export default function Chat() {
                   </Container>
                 </Modal>
 
-                <span style={{ marginBottom: "2px" }}>
+                {/* <span style={{ marginBottom: "2px" }}>
                   {showAttach ? <span className="media-container">
                     <span>
                       {
@@ -297,10 +348,10 @@ export default function Chat() {
                       }
                     </span> </span> : null}
 
-                </span>
+                </span> */}
                 <div class="chat-box-tray">
 
-                  <Button variant="outline-danger" className="media-container-btn" onClick={handleShowAttach}><img src={attach} alt='attachment' width="16" height="16" fill="currentColor" /></Button>
+                  {/* <Button variant="outline-danger" className="media-container-btn" onClick={handleShowAttach}><img src={attach} alt='attachment' width="16" height="16" fill="currentColor" /></Button> */}
                   <form style={{ width: "100%" }}>
                     <input onKeyDown={(e) => { handleEnter(e) }} className="input-box" id="chatIn" defaultValue="" type="text" width="70" placeholder="Type your message here..." />
                     <Button className="send-button" type="button" variant="danger" onClick={() => { sendMessage(getMessage()) }}>send</Button>
@@ -361,12 +412,7 @@ const getCurrentTimeString = () =>{
     return hour + ':' + min + ":" + sec;
 }
 
-const getMessage = () => {
-  let message = document.getElementById("chatIn").value;
-  document.getElementById("chatIn").value = '';
-  let newMessage = { type: "text", side: "right", content: message, time: getCurrentTimeString() };
-  return newMessage;
-}
+
 
 const renderHelper = (prev) => {
   return !prev;
