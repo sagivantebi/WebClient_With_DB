@@ -195,19 +195,9 @@ export default function Registration() {
                 <Button variant="primary" type="submit" onClick={register} class="buttonLogin"  >
                     Submit
                 </Button>
-
-
                 <br />
                 <Link to="/Login">Back To Login Page</Link>
-                {listUsers.map((value,index)=>{
-                return <div>
-                    <h1>hello!</h1>
-                    <div>{value.username}</div>
-
-                    </div>
-            })}
             </Card>
-            
         </div>
     );
 }

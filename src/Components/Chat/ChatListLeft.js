@@ -21,12 +21,11 @@ export default function ChatListLeft(contacts, setChat) {
         <div>
             <div>
                 {contacts.map((value,index) => (<ChatLeftMessageProfile
-                    num={value.id} setChat={setChat} nickname={value.name} last={value.last}/>))}
+                    num={value.id} setChat={setChat} nickname={value.name} last={value.last} img={p1} time={value.lastDate}/>))}
             </div>
         </div>
     );
 }
-
 
 
 const timeComp = (a, b) => {

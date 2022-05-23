@@ -34,10 +34,11 @@ export default function Chat() {
   // }
   
   //Trying DB
-  let urlSpecificUser = "http://localhost:5103/api/users/" + userLogin
-
+  let urlSpecificUser = "http://localhost:5103/api/users"
+  const[toRender,setToRender] = useState(null);
    //the data of tcontacts from the server
    const[listUsers,setListUsers] = useState([]);
+   const[userLoginObject,setUserLoginObject] = useState([]);
    useEffect(async()=>{
   const res = await fetch(urlSpecificUser, {
     method: 'GET',
@@ -50,23 +51,23 @@ export default function Chat() {
   })
   let data = await res.json();
    setListUsers(data)
+   setToRender(data)
+   if(toRender == null){
+   setRender(renderHelper);
+   }
+   listUsers.map((value,index)=>{
+      if (value.username == userLogin){
+        setUserLoginObject(value);
+      }
+});
    },[render]);
-
-
-
-   //the function to get the data from server
-  //  useEffect(async()=>{
-  //      await fetch(urlSpecificUser)
-  //      .then( (response) =>  response.json())
-  //      .then( (json) => setListUsers(json))
-  //  },[]);
-   let chats = (listUsers.chats);
-   let contacts = (listUsers.contacts);
-   let userImage = (listUsers.image);
-   let userNickName = (listUsers.nickName);
+   console.log("hi")
+   let chats = (userLoginObject.chats);
+   let contacts = (userLoginObject.contacts);
+   let userImage = (userLoginObject.image);
+   let userNickName = (userLoginObject.nickName);
    const [currChat, setCurrChat] = useState(0);
-   console.log(chats);
-  
+   
 
 
   const [errorType1, setErrorType1] = useState(false);
@@ -167,7 +168,9 @@ export default function Chat() {
     .then(function(response){return response})
     .then(function(data){
     })
+    setToRender(null)
     setRender(renderHelper);
+
       // let conts = chats;
       // let newContact = chats.at(currChat);
       // let history = newContact.messageHistory;
@@ -183,12 +186,27 @@ export default function Chat() {
       
   //   }
   }
-  const checkUserExists = (name) => {
-    return chats.find((el) => {
-      return el.name === name;
-    });
+  const checkContactExists = (name) => {
+    var toReturn = 0;
+    contacts.map((value,index)=>{
+        if (value.id == name){
+            toReturn = 1;
+        }
+});
+    return toReturn;
   }
-  const addContactChat = () => {
+
+  const checkUserExists = (name) => {
+    var toReturn = 0;
+    listUsers.map((value,index)=>{
+        if (value.username == name){
+            toReturn = 1;
+        }
+});
+    return toReturn;
+  }
+
+  const addContactChat =async () => {
     let username = (document.getElementById("usernameAdd"));
     //cheks if we already have a chat with this contact
     if (username.value == userLogin) {
@@ -200,24 +218,33 @@ export default function Chat() {
 
     }
 
-    if (checkUserExists(username.value)) {
+    if (checkContactExists(username.value)) {
       setErrorType2(false)
       setErrorType1(true)
       userIsNotExist()
       return null;
     }
 
-    if (chats.has(username.value)) {
+    if (checkUserExists(username.value)) {
       setShow(false)
-      let hisHistory = []
-      let newChatWithContact = { num: chats.length, name: username.value, img: chats.get(username.value).at(2), time: getCurrentTimeString(), messageHistory: hisHistory, nickname: chats.get(username.value).at(1) };
-      let conts = chats;
-      conts.unshift(newChatWithContact)
-      userIsExist()
-      setErrorType1(false)
-      setErrorType2(false)
-      setErrorType3(false)
-      return conts
+      let conts = {name:username.value, userApi: userLogin}
+      await fetch('http://localhost:5103/api/contacts', {
+        method:'POST',
+        headers:{"Content-Type" : "application/json"},
+        body: JSON.stringify(conts)
+    })
+    .then(function(response){return response})
+    .then(function(data){
+    })
+    userIsExist()
+    setErrorType1(false)
+    setErrorType2(false)
+    setErrorType3(false)
+    setRender(renderHelper);
+    //those two making the rendor!
+    setToRender(null)
+    setRender(renderHelper);
+    return conts
 
     }
     else {
@@ -227,11 +254,10 @@ export default function Chat() {
       userIsNotExist()
       return null;
     }
-
   }
 
   const returnStatus = () => {
-      return "Offline";
+      return "";
   }
 
   const returnNickname = () => {
@@ -246,18 +272,11 @@ export default function Chat() {
 return ""
   }
 
-  const UserInDbAlready = (userName) =>{
-    var toReturn = 0;
-    listUsers.map((value,index)=>{
-        if (value.username == userName){
-            toReturn = 1;
-        }
-});
-    return toReturn;
-}
+
 
   const returnImg = () => {
-    return defaultContact;
+    const logo = (userImage);
+    return logo;
   }
 
   const returnMsg = () => {
@@ -269,7 +288,8 @@ return ""
 
   
   const returnImgUser = () => {
-    return defaultContact;
+    const logo = (userImage);
+    return logo;
   }
 
 
@@ -286,7 +306,7 @@ return ""
         <div className="row no-gutters" style={{ padding: "0px", background: "black", height: "100%" }}>
           <div className="col-md-4 border-right" style={{ background: "#282c34", height: "80%", borderRadius: "10px" }}>
             <div className="settings-tray" style={{ background: "black", color: "white" }}>
-              <img className="profile-image" src={returnImgUser()} alt="Profile img" />
+              <img className="profile-image" src={p3} alt="Profile img" />
               <span className="settings-tray--right">
                 <span className="material-icons">{userNickName}</span>
                 <Button variant="light" type="submit" onClick={handleShow}>+</Button>
@@ -299,7 +319,7 @@ return ""
             </div>
           </div>
           <div class="col-md-8 chat-box" style={{ padding: "0px", marginTop: "10px" }}>
-            <ChatBar status={returnStatus()} nickname={returnNickname()} img={returnImg()} />
+            <ChatBar status={returnStatus()} nickname={returnNickname()} img={p1} />
             <div style={{ overflowY: "scroll", overflowX: "hidden", marginBottom: "5px", height: "300px", position: "relative" }}>
               <div>{returnMsg()}</div>
             </div>
@@ -387,9 +407,6 @@ return ""
           <div className="modal-footer">
             <button type="button" className="btn btn-danger" onClick={() => {
               let newContact = addContactChat();
-              if (newContact != null) {
-                // setChats(newContact)
-              }
             }}>Start Chat</button>
           </div>
         </div>
