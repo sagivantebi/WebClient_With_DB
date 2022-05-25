@@ -8,7 +8,7 @@ import Button from 'react-bootstrap/Button';
 import background1 from './images/background.jpg'
 import React, { useState } from 'react';
 import {
-  BrowserRouter as Router,
+  HashRouter as Router,
   Routes,
   Route,
   Link,

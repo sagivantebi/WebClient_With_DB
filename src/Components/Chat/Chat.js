@@ -16,6 +16,7 @@ import Message from "./Message";
 import ChatBox from "./ChatBox";
 import contacts from "./contacts";
 import "./Chat.css";
+import axios from "axios";
 import ChatListLeft from "./ChatListLeft";
 // import users from "../Users";
 import onlineArray from "./onlineArray";
@@ -23,7 +24,8 @@ import onlineArray from "./onlineArray";
 
 export default function Chat() {
   const [render, setRender] = useState(false);
-  const {state} = useLocation();
+  const { state } = useLocation();
+  const forceUpdate = React.useCallback(() => setRender({}), []);
   const userLogin = state.userLogin;
   //  const userLogin = document.getElementById("formUsername").value;
 
@@ -32,42 +34,42 @@ export default function Chat() {
   // for (let index = 0; index < chatHook.length; index++) {
   //   chatHook.at(index).num = index;
   // }
-  
+
   //Trying DB
   let urlSpecificUser = "http://localhost:5103/api/users"
-  const[toRender,setToRender] = useState(null);
-   //the data of tcontacts from the server
-   const[listUsers,setListUsers] = useState([]);
-   const[userLoginObject,setUserLoginObject] = useState([]);
-   useEffect(async()=>{
-  const res = await fetch(urlSpecificUser, {
-    method: 'GET',
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Credentials': '*'
-    },
-    mode: 'cors',
-  })
-  let data = await res.json();
-   setListUsers(data)
-   setToRender(data)
-   if(toRender == null){
-   setRender(renderHelper);
-   }
-   listUsers.map((value,index)=>{
-      if (value.username == userLogin){
+  const [toRender, setToRender] = useState(null);
+  //the data of tcontacts from the server
+  const [listUsers, setListUsers] = useState([]);
+  const [userLoginObject, setUserLoginObject] = useState([]);
+  useEffect(async () => {
+    const res = await fetch(urlSpecificUser, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Credentials': '*'
+      },
+      mode: 'cors',
+    })
+    let data = await res.json();
+    setListUsers(data)
+    setToRender(data)
+    if (toRender == null) {
+      setRender(renderHelper);
+    }
+    listUsers.map((value, index) => {
+      if (value.username == userLogin) {
         setUserLoginObject(value);
       }
-});
-   },[render]);
-   console.log("hi")
-   let chats = (userLoginObject.chats);
-   let contacts = (userLoginObject.contacts);
-   let userImage = (userLoginObject.image);
-   let userNickName = (userLoginObject.nickName);
-   const [currChat, setCurrChat] = useState(0);
-   
+    });
+  }, [render]);
+  console.log("hi")
+  let chats = (userLoginObject.chats);
+  let contacts = (userLoginObject.contacts);
+  let userImage = (userLoginObject.image);
+  let userNickName = (userLoginObject.nickName);
+  const [currChat, setCurrChat] = useState(0);
+
 
 
   const [errorType1, setErrorType1] = useState(false);
@@ -157,56 +159,55 @@ export default function Chat() {
 
   }
 
-  const sendMessage = async(mess) => {
-    // if (mess.content != '') {
-      let messageNew = {content:mess.content, userApi: userLogin}
-       await fetch('http://localhost:5103/api/contacts/' + currChat + '/messages', {
-        method:'POST',
-        headers:{"Content-Type" : "application/json"},
-        body: JSON.stringify(messageNew)
-    })
-    .then(function(response){return response})
-    .then(function(data){
-    })
+  const sendMessage = async (mess) => {
+    let finalUrl = 'http://localhost:5103/api/contacts/' + currChat + '/messages';
+    axios.post(finalUrl, mess, {
+      params:
+        { username: userLogin }
+    }).then(response => response.status).catch(err => console.warn(err));
+
+    //   await fetch('http://localhost:5103/api/contacts/' + currChat + '/messages', {
+    //   method:'POST',
+    //   headers:{"Content-Type" : "application/json"},
+    //   body: JSON.stringify(messageNew)
+    // })
+    // .then(function(response){return response})
+    // .then(function(data){
+    // })
     setToRender(null)
     setRender(renderHelper);
 
-      // let conts = chats;
-      // let newContact = chats.at(currChat);
-      // let history = newContact.messageHistory;
-      // let newHistory = [...history, message];
-      // newContact.messageHistory = newHistory;
-      // newContact.time = mess.time;
-      // newContact.num = conts.at(0).num - 1;
-      // conts.splice(currChat, 1);
-      // conts.unshift(newContact);
-      // conts[currChat] = newContact;
-
-  //     // setChats(conts);
-      
-  //   }
   }
   const checkContactExists = (name) => {
     var toReturn = 0;
-    contacts.map((value,index)=>{
-        if (value.id == name){
-            toReturn = 1;
-        }
-});
+    contacts.map((value, index) => {
+      if (value.id == name) {
+        toReturn = 1;
+      }
+    });
     return toReturn;
   }
 
   const checkUserExists = (name) => {
     var toReturn = 0;
-    listUsers.map((value,index)=>{
-        if (value.username == name){
-            toReturn = 1;
-        }
-});
+    listUsers.map((value, index) => {
+      if (value.username == name) {
+        toReturn = 1;
+      }
+    });
     return toReturn;
   }
 
-  const addContactChat =async () => {
+  const findUserAddContact = (name) => {
+    var cont = null;
+    listUsers.map((value, index) => {
+      if (value.username == name) {
+        cont = value;
+      }
+    });
+    return cont;
+  }
+  const addContactChat = () => {
     let username = (document.getElementById("usernameAdd"));
     //cheks if we already have a chat with this contact
     if (username.value == userLogin) {
@@ -227,24 +228,31 @@ export default function Chat() {
 
     if (checkUserExists(username.value)) {
       setShow(false)
-      let conts = {name:username.value, userApi: userLogin}
-      await fetch('http://localhost:5103/api/contacts', {
-        method:'POST',
-        headers:{"Content-Type" : "application/json"},
-        body: JSON.stringify(conts)
-    })
-    .then(function(response){return response})
-    .then(function(data){
-    })
-    userIsExist()
-    setErrorType1(false)
-    setErrorType2(false)
-    setErrorType3(false)
-    setRender(renderHelper);
-    //those two making the rendor!
-    setToRender(null)
-    setRender(renderHelper);
-    return conts
+      var contactDb = findUserAddContact(username.value);
+      let cont = { id: username.value, name: contactDb.nickName, server:contactDb.server }
+      let finalUrl = 'http://localhost:5103/api/contacts';
+      axios.post(finalUrl, cont, {
+        params:
+          { username: userLogin }
+      }).then(response => response.status).catch(err => console.warn(err));
+      // await fetch('http://localhost:5103/api/contacts', {
+      //   method: 'POST',
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify(conts)
+      // })
+      //   .then(function (response) { return response })
+      //   .then(function (data) {
+      //   })
+      userIsExist()
+      setErrorType1(false)
+      setErrorType2(false)
+      setErrorType3(false)
+      setRender(renderHelper);
+      //those two making the rendor!
+      setToRender(null);
+      setRender(renderHelper);
+      forceUpdate();
+      return cont;
 
     }
     else {
@@ -257,19 +265,19 @@ export default function Chat() {
   }
 
   const returnStatus = () => {
-      return "";
+    return "";
   }
 
   const returnNickname = () => {
-    if(contacts == undefined){
+    if (contacts == undefined) {
       return ""
     }
-    return contacts.map((value,index)=>{
-      if (value.id == currChat){
+    return contacts.map((value, index) => {
+      if (value.id == currChat) {
         return value.name;
       }
-});
-return ""
+    });
+    return ""
   }
 
 
@@ -286,7 +294,7 @@ return ""
     return ChatBox(chats, currChat);
   }
 
-  
+
   const returnImgUser = () => {
     const logo = (userImage);
     return logo;
@@ -296,7 +304,7 @@ return ""
   const getMessage = () => {
     let message = document.getElementById("chatIn").value;
     document.getElementById("chatIn").value = '';
-    let newMessage = {content: message};
+    let newMessage = { content: message };
     return newMessage;
   }
 
@@ -309,6 +317,7 @@ return ""
               <img className="profile-image" src={p3} alt="Profile img" />
               <span className="settings-tray--right">
                 <span className="material-icons">{userNickName}</span>
+                {/*ADD CONTACT: */}
                 <Button variant="light" type="submit" onClick={handleShow}>+</Button>
               </span>
             </div>
@@ -328,8 +337,8 @@ return ""
                 <Modal style={{ marginLeft: "35%", marginTop: "25%", width: "30%" }} show={showFileUp}>
                   <input id="up-image" type="file" onChange={(e) => handleChange(e)} />
                   <span >
-                    <Button type="submit"  variant="danger" style={{ alignContent: "left", width: "100%" }} onClick={() => handleFile()}>send</Button>
-                    <Button  variant="danger" style={{ width: "100%" }} onClick={() => setShowFileUp(false)}>cancel</Button>
+                    <Button type="submit" variant="danger" style={{ alignContent: "left", width: "100%" }} onClick={() => handleFile()}>send</Button>
+                    <Button variant="danger" style={{ width: "100%" }} onClick={() => setShowFileUp(false)}>cancel</Button>
                   </span>
                 </Modal>
 
@@ -350,30 +359,33 @@ return ""
                 </Modal>
 
                 {/* <span style={{ marginBottom: "2px" }}>
-                  {showAttach ? <span className="media-container">
-                    <span>
-                      {
-                        showAttach ? <span className="media-button"><Button variant="outline-danger" onClick={() => (setShowAudButt(true), handleAudio())}><img src={record} alt='record' width="16" height="16" fill="currentColor" /></Button></span> : null
-                      }
-                    </span>
-                    <span>
-                      {
-                        showAttach ? <span className="media-button"><Button variant="outline-danger" onClick={() => setShowFileUp(true)}><img src={video} alt='video' width="16" height="16" fill="currentColor" /></Button></span> : null
-                      }
-                    </span>
-                    <span>
-                      {
-                        showAttach ? <span className="media-button"><Button size='xs' variant="outline-danger" onClick={() => sendHeart()}><img src={heart} alt='heart' width="16" height="16" fill="currentColor" /></Button></span>
-                          : null
-                      }
-                    </span> </span> : null}
-
-                </span> */}
+    {showAttach ? <span className="media-container">
+    <span>
+    {
+      showAttach ? <span className="media-button"><Button variant="outline-danger" onClick={() => (setShowAudButt(true), handleAudio())}><img src={record} alt='record' width="16" height="16" fill="currentColor" /></Button></span> : null
+    }
+    </span>
+    <span>
+    {
+      showAttach ? <span className="media-button"><Button variant="outline-danger" onClick={() => setShowFileUp(true)}><img src={video} alt='video' width="16" height="16" fill="currentColor" /></Button></span> : null
+    }
+    </span>
+    <span>
+    {
+      showAttach ? <span className="media-button"><Button size='xs' variant="outline-danger" onClick={() => sendHeart()}><img src={heart} alt='heart' width="16" height="16" fill="currentColor" /></Button></span>
+      : null
+    }
+    </span> </span> : null}
+    
+  </span> */}
                 <div class="chat-box-tray">
 
                   {/* <Button variant="outline-danger" className="media-container-btn" onClick={handleShowAttach}><img src={attach} alt='attachment' width="16" height="16" fill="currentColor" /></Button> */}
+
+
+                  {/* CHAT INPUT: this form is used to send the messages in the chat */}
                   <form style={{ width: "100%" }}>
-                    <input onKeyDown={(e) => { handleEnter(e) }} className="input-box" id="chatIn" defaultValue="" type="text" width="70" placeholder="Type your message here..." />
+                    <input onKeyDown={(e) => { handleEnter(e) }} className="input-box" id="chatIn" defaultValue="" type="text" width="70" placeholder="Type your message here..." from={userLogin} to={currChat} />
                     <Button className="send-button" type="button" variant="danger" onClick={() => { sendMessage(getMessage()) }}>send</Button>
                   </form>
                 </div>
@@ -415,7 +427,7 @@ return ""
   );
 }
 
-const getCurrentTimeString = () =>{
+const getCurrentTimeString = () => {
   var today = new Date();
   let hour = today.getHours();
   let min = today.getMinutes();
@@ -426,7 +438,7 @@ const getCurrentTimeString = () =>{
     min = "0" + today.getMinutes();
   if (sec < 10)
     sec = "0" + today.getSeconds();
-    return hour + ':' + min + ":" + sec;
+  return hour + ':' + min + ":" + sec;
 }
 
 
@@ -454,16 +466,16 @@ const timeComp = (a, b) => {
   let timeA;
   let timeB;
   if (a.messageHistory.length == 0) {
-      timeA = a.time;
+    timeA = a.time;
   }
   else {
-      timeA = a.messageHistory.at(a.messageHistory.length - 1).time;
+    timeA = a.messageHistory.at(a.messageHistory.length - 1).time;
   }
   if (b.messageHistory.length == 0) {
-      timeB = b.time;
+    timeB = b.time;
   }
   else {
-      timeB = b.messageHistory.at(b.messageHistory.length - 1).time;
+    timeB = b.messageHistory.at(b.messageHistory.length - 1).time;
   }
   let hoursA = parseInt(timeA.substr(0, 2));
   let hoursB = parseInt(timeB.substr(0, 2));
@@ -479,7 +491,7 @@ const timeComp = (a, b) => {
     return -1;
   else if (minA < minB)
     return 1;
-  else if(secA > secB)
+  else if (secA > secB)
     return -1;
   return 1;
 }
