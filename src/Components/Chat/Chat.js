@@ -20,12 +20,13 @@ import axios from "axios";
 import ChatListLeft from "./ChatListLeft";
 // import users from "../Users";
 import onlineArray from "./onlineArray";
+import { HubConnectionBuilder } from "@microsoft/signalr";
 
 
 export default function Chat() {
   const [render, setRender] = useState(false);
+  const [update, forceUpdate] = useState(0);
   const { state } = useLocation();
-  const forceUpdate = React.useCallback(() => setRender({}), []);
   const userLogin = state.userLogin;
   //  const userLogin = document.getElementById("formUsername").value;
 
@@ -38,9 +39,35 @@ export default function Chat() {
   //Trying DB
   let urlSpecificUser = "http://localhost:5103/api/users"
   const [toRender, setToRender] = useState(null);
+  const [toRender2, setToRender2] = useState(null);
+
   //the data of tcontacts from the server
   const [listUsers, setListUsers] = useState([]);
   const [userLoginObject, setUserLoginObject] = useState([]);
+
+  const getData = async () => {
+    const res = await fetch(urlSpecificUser, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Credentials': '*'
+      },
+      mode: 'cors',
+    })
+    let data = await res.json();
+    setListUsers(data)
+    setToRender(data)
+    if (toRender == null) {
+      setToRender2(renderHelper);
+    }
+    listUsers.map((value, index) => {
+      if (value.username == userLogin) {
+        setUserLoginObject(value);
+      }
+    });
+  }
+  
   useEffect(async () => {
     const res = await fetch(urlSpecificUser, {
       method: 'GET',
@@ -63,14 +90,13 @@ export default function Chat() {
       }
     });
   }, [render]);
-  console.log("hi")
+  // console.log("loaded react");
   let chats = (userLoginObject.chats);
   let contacts = (userLoginObject.contacts);
   let userImage = (userLoginObject.image);
   let userNickName = (userLoginObject.nickName);
-  const [currChat, setCurrChat] = useState(0);
-
-
+  const [currChat, setCurrChat] = useState();
+  
 
   const [errorType1, setErrorType1] = useState(false);
   const [errorType2, setErrorType2] = useState(false);
@@ -159,6 +185,39 @@ export default function Chat() {
 
   }
 
+  const connection = new HubConnectionBuilder().withUrl('http://localhost:5103/SignalHub', {
+    headers: {"Access-Control-Allow-Origin": "include"},
+    mode: "cors"
+  }).build();
+
+async function start() {
+  try {
+    await connection.start();
+    // console.log("sigR connected");
+  } catch(err) {
+    console.log(err);
+    setTimeout(start, 5000);
+  }
+}
+
+start();
+
+const mounted = useRef();
+const mounted2 = useRef();
+useEffect(() => {
+  if(!mounted.current) {
+    connection.on("MessageSent", async (user, contact, message) => {
+      if(user == userLogin){
+      }
+      console.log("got update!!!");
+
+    });
+    mounted.current = true;
+
+  }
+}, []);
+
+
   const sendMessage = async (mess) => {
     let finalUrl = 'http://localhost:5103/api/contacts/' + currChat + '/messages';
     axios.post(finalUrl, mess, {
@@ -174,9 +233,11 @@ export default function Chat() {
     // .then(function(response){return response})
     // .then(function(data){
     // })
+    
     setToRender(null)
     setRender(renderHelper);
-
+    forceUpdate(value => value + 1);
+    await connection.invoke("UpdateChat", userLogin, currChat, mess.content).then(console.log("sent messag!!"));
   }
   const checkContactExists = (name) => {
     var toReturn = 0;
@@ -251,7 +312,7 @@ export default function Chat() {
       //those two making the rendor!
       setToRender(null);
       setRender(renderHelper);
-      forceUpdate();
+      forceUpdate(value => value + 1);
       return cont;
 
     }
@@ -281,20 +342,16 @@ export default function Chat() {
   }
 
 
-
   const returnImg = () => {
     const logo = (userImage);
     return logo;
   }
-
   const returnMsg = () => {
     if (contacts == undefined) {
       return "";
     }
     return ChatBox(chats, currChat);
   }
-
-
   const returnImgUser = () => {
     const logo = (userImage);
     return logo;
@@ -423,6 +480,8 @@ export default function Chat() {
           </div>
         </div>
       </Modal>
+      <script src="/lib/microsoft/signalr/dist/browser/signalr.js"></script>
+      <script src="/js/ws.js"></script>
     </div>
   );
 }

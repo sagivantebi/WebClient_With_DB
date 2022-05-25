@@ -7,6 +7,7 @@ import Chat from './Chat/Chat';
 import Button from 'react-bootstrap/Button';
 import background1 from './images/background.jpg'
 import React, { useState } from 'react';
+import  {HubConnectionBuilder} from "@microsoft/signalr";
 import {
   HashRouter as Router,
   Routes,
@@ -20,6 +21,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 
 export default function App() {
+
   const styles = {
     container: {
         backgroundImage: `url(${background1})`,
@@ -32,9 +34,8 @@ export default function App() {
 };
   <script
     src="https://unpkg.com/react-bootstrap@next/dist/react-bootstrap.min.js"
-    crossorigin>
-
-  </script>
+    crossorigin></script>
+  
   return (
     <Router>
       <div style={{backgroundImage : `url(${background1})`}}>
