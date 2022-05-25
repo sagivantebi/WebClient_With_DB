@@ -3,7 +3,6 @@ import React from "react";
 import { Form, Button, Container, Col, Row, Card, Alert } from "react-bootstrap";
 import Nick from '../images/nick.png';
 import p1 from '../images/p1.jpg';
-import contacts from "./contacts";
 import Chat from "./Chat";
 import ChatBox from "./ChatBox";
 
@@ -36,13 +35,13 @@ const sendLatsMessage = (chat) => {
 
 
 
-const renderChat = (name) => {
-  return (
-    <div>{ChatBox(contacts.find((element) => {
-      return element.name === name;
-    }))}</div>
-  );
-}
+// const renderChat = (name) => {
+//   return (
+//     <div>{ChatBox(contacts.find((element) => {
+//       return element.name === name;
+//     }))}</div>
+//   );
+// }
 
 
 export default ChatLeftMessageProfile;

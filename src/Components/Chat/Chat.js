@@ -14,13 +14,12 @@ import { Link, useLocation } from "react-router-dom";
 import { Form, Button, Modal, Container, Col, Row, Card, Alert } from "react-bootstrap";
 import Message from "./Message";
 import ChatBox from "./ChatBox";
-import contacts from "./contacts";
 import "./Chat.css";
 import axios from "axios";
 import ChatListLeft from "./ChatListLeft";
 // import users from "../Users";
 import onlineArray from "./onlineArray";
-import { HubConnectionBuilder } from "@microsoft/signalr";
+import { HubConnectionState, HubConnectionBuilder } from "@microsoft/signalr";
 
 
 export default function Chat() {
@@ -47,7 +46,7 @@ export default function Chat() {
   const [render, setRender] = useState(0);
   const { state } = useLocation();
   const usernameString = state.userLogin;
-  const [currChat, setCurrChat] = useState();
+  const [currChat, setCurrChat] = useState(null);
 
   //  const userLogin = document.getElementById("formUsername").value;
 
@@ -63,15 +62,17 @@ export default function Chat() {
   //the data of tcontacts from the server
   const [listUsers, setListUsers] = useState([]);
   const [userObject, setUserObject] = useState([]);
+  const [haveLoaded, setLoaded] = useState(false);
+  const [connection, setConnection] = useState(null);
+  const [reconnection, setReconnection] = useState(0);
   const messagesEnd = useRef(null)
   const scrollToBottom = () => {
     messagesEnd.current?.scrollIntoView({ behavior: "smooth" })
   }
 
-  
+  console.log(currChat);
 
 
-  var connection = null;
   async function start() {
     if (connection != null) {
       try {
@@ -85,27 +86,44 @@ export default function Chat() {
 
   }
 
-  const mounted = useRef();
-  const mounted2 = useRef();
+  const mounted = useRef(false);
+  const mounted2 = useRef(false);
   useEffect(() => {
-    connection = new HubConnectionBuilder().withUrl('http://localhost:5103/SignalHub', {
+    const connTemp = new HubConnectionBuilder().withUrl('http://localhost:5103/SignalHub', {
       headers: { "Access-Control-Allow-Origin": "include" },
       mode: "cors"
-    }).build();
+    }).withAutomaticReconnect().build();
+    setConnection(connTemp);
     start();
-
   }, []);
 
-  if (!mounted.current && connection != null) {
-    connection.on("MessageSent", async (user, contact, message) => {
-      if (user == usernameString) {
-      }
-      console.log("got update!!!");
-
-    });
-    mounted.current = true;
-
+  if (connection != null && connection.State == HubConnectionState.Disconnected) {
+    start();
   }
+
+  useEffect(() => {
+    if (!mounted.current && connection != null) {
+      connection.on("MessageSent", async (user, contact, message) => {
+        if (user == usernameString || contact == usernameString) {
+          setToRender(null);
+          setRender(render + 1);
+        }
+
+      });
+      mounted.current = true;
+    }
+    if (!mounted2.current && connection != null) {
+      connection.on("ClientAdded", async (user, contact) => {
+        if (user == usernameString || contact == usernameString) {
+          setCurrChat(user);
+          setToRender(null);
+          setRender(render + 1);
+        }
+      });
+      mounted2 = true;
+    }
+  }, [])
+
   useEffect(async () => {
     const response = await fetch(urlGeneric, {
       method: 'GET',
@@ -118,24 +136,27 @@ export default function Chat() {
     });
     let data = await response.json();
     setListUsers(data);
-    setToRender(data)
+    setToRender(data);
     if (toRender == null) {
       setRender(render + 1);
     }
     listUsers.map((value, index) => {
       if (value.username == usernameString) {
-        console.log("val", value);
         setUserObject(value);
-        setCurrChat(value.contacts.at(0).id);
-        console.log("contact", userObject);
-
+        if (!haveLoaded) {
+          setLoaded(true);
+          setCurrChat(value.contacts.at(0).id);
+        }
       }
     })
 
     // let data = await res.json();
     // setListUsers(data)
   }, [render]);
-  console.log("render is:", render);
+
+
+
+
   let chats = (userObject.chats);
   let contacts = (userObject.contacts);
   let userImage = (userObject.image);
@@ -145,10 +166,11 @@ export default function Chat() {
   // setUserImage(userLoginObject.image);
   // setUserNickName(userLoginObject.nickName);
   if (chats != undefined) {
-    console.log("messages:  ", chats.at(currChat).messages);
+    // console.log("messages:  ", chats.at(currChat).messages);
   }
 
- 
+
+
   const handleChange = (e) => {
     setFileType(e.target.files[0].type);
     setFile(URL.createObjectURL(e.target.files[0]));
@@ -227,7 +249,7 @@ export default function Chat() {
     setToRender(null);
     setRender(render + 1);
 
-    if (connection != null) {
+    if (connection != null && connection.connectionStarted) {
       await connection.invoke("UpdateChat", usernameString, currChat, mess.content).then(console.log("sent messag!!"));
 
     }
@@ -301,7 +323,11 @@ export default function Chat() {
       axios.post(finalUrl, cont, {
         params:
           { username: usernameString }
-      }).then(response => response.status).catch(err => console.warn(err));
+      }).then(response => {
+        setToRender(null);
+        setRender(render + 1);
+        return response.status;
+      }).catch(err => console.warn(err));
       // await fetch('http://localhost:5103/api/contacts', {
       //   method: 'POST',
       //   headers: { "Content-Type": "application/json" },
@@ -310,13 +336,16 @@ export default function Chat() {
       //   .then(function (response) { return response })
       //   .then(function (data) {
       //   })
+
+      if (connection != null && connection.State == HubConnectionState.Connected) {
+        connection.invoke("UpdateContacts", usernameString, username.value).then(console.log("added contact"));
+      }
       userIsExist()
       setErrorType1(false)
       setErrorType2(false)
       setErrorType3(false)
       //those two making the rendor!
-      setToRender(null);
-      setRender(render + 1);
+
       return cont;
 
     }
@@ -355,14 +384,14 @@ export default function Chat() {
     }
     return <div>
       <div>{ChatBox(chats, currChat)}</div>
-      <div ref={messagesEnd}/>
+      <div ref={messagesEnd} />
     </div>;
   }
 
   useEffect(() => {
     scrollToBottom();
   }, [chats]);
-  
+
   const returnImgUser = () => {
     const logo = (userImage);
     return logo;
