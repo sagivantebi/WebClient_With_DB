@@ -24,80 +24,6 @@ import { HubConnectionBuilder } from "@microsoft/signalr";
 
 
 export default function Chat() {
-  const [render, setRender] = useState(false);
-  const [update, forceUpdate] = useState(0);
-  const { state } = useLocation();
-  const userLogin = state.userLogin;
-  //  const userLogin = document.getElementById("formUsername").value;
-
-  //Before DB
-  // let chatHook = users.get(usernameToUse).at(3).sort(timeComp);
-  // for (let index = 0; index < chatHook.length; index++) {
-  //   chatHook.at(index).num = index;
-  // }
-
-  //Trying DB
-  let urlSpecificUser = "http://localhost:5103/api/users"
-  const [toRender, setToRender] = useState(null);
-  const [toRender2, setToRender2] = useState(null);
-
-  //the data of tcontacts from the server
-  const [listUsers, setListUsers] = useState([]);
-  const [userLoginObject, setUserLoginObject] = useState([]);
-
-  const getData = async () => {
-    const res = await fetch(urlSpecificUser, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Credentials': '*'
-      },
-      mode: 'cors',
-    })
-    let data = await res.json();
-    setListUsers(data)
-    setToRender(data)
-    if (toRender == null) {
-      setToRender2(renderHelper);
-    }
-    listUsers.map((value, index) => {
-      if (value.username == userLogin) {
-        setUserLoginObject(value);
-      }
-    });
-  }
-  
-  useEffect(async () => {
-    const res = await fetch(urlSpecificUser, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Credentials': '*'
-      },
-      mode: 'cors',
-    })
-    let data = await res.json();
-    setListUsers(data)
-    setToRender(data)
-    if (toRender == null) {
-      setRender(renderHelper);
-    }
-    listUsers.map((value, index) => {
-      if (value.username == userLogin) {
-        setUserLoginObject(value);
-      }
-    });
-  }, [render]);
-  // console.log("loaded react");
-  let chats = (userLoginObject.chats);
-  let contacts = (userLoginObject.contacts);
-  let userImage = (userLoginObject.image);
-  let userNickName = (userLoginObject.nickName);
-  const [currChat, setCurrChat] = useState();
-  
-
   const [errorType1, setErrorType1] = useState(false);
   const [errorType2, setErrorType2] = useState(false);
   const [errorType3, setErrorType3] = useState(false);
@@ -118,6 +44,111 @@ export default function Chat() {
   const [fileType, setFileType] = useState();
   const [file, setFile] = useState();
 
+  const [render, setRender] = useState(0);
+  const { state } = useLocation();
+  const usernameString = state.userLogin;
+  const [currChat, setCurrChat] = useState();
+
+  //  const userLogin = document.getElementById("formUsername").value;
+
+  //Before DB
+  // let chatHook = users.get(usernameToUse).at(3).sort(timeComp);
+  // for (let index = 0; index < chatHook.length; index++) {
+  //   chatHook.at(index).num = index;
+  // }
+
+  //Trying DB
+  let urlGeneric = "http://localhost:5103/api/users"
+  const [toRender, setToRender] = useState(null);
+  //the data of tcontacts from the server
+  const [listUsers, setListUsers] = useState([]);
+  const [userObject, setUserObject] = useState([]);
+  const messagesEnd = useRef(null)
+  const scrollToBottom = () => {
+    messagesEnd.current?.scrollIntoView({ behavior: "smooth" })
+  }
+
+  
+
+
+  var connection = null;
+  async function start() {
+    if (connection != null) {
+      try {
+        await connection.start();
+        // console.log("sigR connected");
+      } catch (err) {
+        console.log(err);
+        setTimeout(start, 5000);
+      }
+    }
+
+  }
+
+  const mounted = useRef();
+  const mounted2 = useRef();
+  useEffect(() => {
+    connection = new HubConnectionBuilder().withUrl('http://localhost:5103/SignalHub', {
+      headers: { "Access-Control-Allow-Origin": "include" },
+      mode: "cors"
+    }).build();
+    start();
+
+  }, []);
+
+  if (!mounted.current && connection != null) {
+    connection.on("MessageSent", async (user, contact, message) => {
+      if (user == usernameString) {
+      }
+      console.log("got update!!!");
+
+    });
+    mounted.current = true;
+
+  }
+  useEffect(async () => {
+    const response = await fetch(urlGeneric, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Credentials': '*'
+      },
+      mode: 'cors',
+    });
+    let data = await response.json();
+    setListUsers(data);
+    setToRender(data)
+    if (toRender == null) {
+      setRender(render + 1);
+    }
+    listUsers.map((value, index) => {
+      if (value.username == usernameString) {
+        console.log("val", value);
+        setUserObject(value);
+        setCurrChat(value.contacts.at(0).id);
+        console.log("contact", userObject);
+
+      }
+    })
+
+    // let data = await res.json();
+    // setListUsers(data)
+  }, [render]);
+  console.log("render is:", render);
+  let chats = (userObject.chats);
+  let contacts = (userObject.contacts);
+  let userImage = (userObject.image);
+  let userNickName = (userObject.nickName);
+  // setChats(userLoginObject.chats);
+  // setContacts(userLoginObject.contacts);
+  // setUserImage(userLoginObject.image);
+  // setUserNickName(userLoginObject.nickName);
+  if (chats != undefined) {
+    console.log("messages:  ", chats.at(currChat).messages);
+  }
+
+ 
   const handleChange = (e) => {
     setFileType(e.target.files[0].type);
     setFile(URL.createObjectURL(e.target.files[0]));
@@ -174,7 +205,7 @@ export default function Chat() {
     let newHistory = [...history, newMessage];
     newContact.messageHistory = newHistory;
     conts[currChat] = newContact;
-    setRender(renderHelper);
+    setRender(render + 1);
     setShowFileUp(false);
   }
 
@@ -185,60 +216,35 @@ export default function Chat() {
 
   }
 
-  const connection = new HubConnectionBuilder().withUrl('http://localhost:5103/SignalHub', {
-    headers: {"Access-Control-Allow-Origin": "include"},
-    mode: "cors"
-  }).build();
-
-async function start() {
-  try {
-    await connection.start();
-    // console.log("sigR connected");
-  } catch(err) {
-    console.log(err);
-    setTimeout(start, 5000);
-  }
-}
-
-start();
-
-const mounted = useRef();
-const mounted2 = useRef();
-useEffect(() => {
-  if(!mounted.current) {
-    connection.on("MessageSent", async (user, contact, message) => {
-      if(user == userLogin){
-      }
-      console.log("got update!!!");
-
-    });
-    mounted.current = true;
-
-  }
-}, []);
 
 
   const sendMessage = async (mess) => {
     let finalUrl = 'http://localhost:5103/api/contacts/' + currChat + '/messages';
     axios.post(finalUrl, mess, {
       params:
-        { username: userLogin }
+        { username: usernameString }
     }).then(response => response.status).catch(err => console.warn(err));
+    setToRender(null);
+    setRender(render + 1);
 
-    //   await fetch('http://localhost:5103/api/contacts/' + currChat + '/messages', {
-    //   method:'POST',
-    //   headers:{"Content-Type" : "application/json"},
-    //   body: JSON.stringify(messageNew)
-    // })
-    // .then(function(response){return response})
-    // .then(function(data){
-    // })
-    
-    setToRender(null)
-    setRender(renderHelper);
-    forceUpdate(value => value + 1);
-    await connection.invoke("UpdateChat", userLogin, currChat, mess.content).then(console.log("sent messag!!"));
+    if (connection != null) {
+      await connection.invoke("UpdateChat", usernameString, currChat, mess.content).then(console.log("sent messag!!"));
+
+    }
   }
+
+
+  // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  //   await fetch('http://localhost:5103/api/contacts/' + currChat + '/messages', {
+  //   method:'POST',
+  //   headers:{"Content-Type" : "application/json"},
+  //   body: JSON.stringify(messageNew)
+  // })
+  // .then(function(response){return response})
+  // .then(function(data){
+  // })
+
+
   const checkContactExists = (name) => {
     var toReturn = 0;
     contacts.map((value, index) => {
@@ -271,7 +277,7 @@ useEffect(() => {
   const addContactChat = () => {
     let username = (document.getElementById("usernameAdd"));
     //cheks if we already have a chat with this contact
-    if (username.value == userLogin) {
+    if (username.value == usernameString) {
       setErrorType3(true)
       setErrorType2(false)
       setErrorType1(false)
@@ -290,11 +296,11 @@ useEffect(() => {
     if (checkUserExists(username.value)) {
       setShow(false)
       var contactDb = findUserAddContact(username.value);
-      let cont = { id: username.value, name: contactDb.nickName, server:contactDb.server }
+      let cont = { id: username.value, name: contactDb.nickName, server: contactDb.server }
       let finalUrl = 'http://localhost:5103/api/contacts';
       axios.post(finalUrl, cont, {
         params:
-          { username: userLogin }
+          { username: usernameString }
       }).then(response => response.status).catch(err => console.warn(err));
       // await fetch('http://localhost:5103/api/contacts', {
       //   method: 'POST',
@@ -308,11 +314,9 @@ useEffect(() => {
       setErrorType1(false)
       setErrorType2(false)
       setErrorType3(false)
-      setRender(renderHelper);
       //those two making the rendor!
       setToRender(null);
-      setRender(renderHelper);
-      forceUpdate(value => value + 1);
+      setRender(render + 1);
       return cont;
 
     }
@@ -338,7 +342,6 @@ useEffect(() => {
         return value.name;
       }
     });
-    return ""
   }
 
 
@@ -350,8 +353,16 @@ useEffect(() => {
     if (contacts == undefined) {
       return "";
     }
-    return ChatBox(chats, currChat);
+    return <div>
+      <div>{ChatBox(chats, currChat)}</div>
+      <div ref={messagesEnd}/>
+    </div>;
   }
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [chats]);
+  
   const returnImgUser = () => {
     const logo = (userImage);
     return logo;
@@ -386,7 +397,7 @@ useEffect(() => {
           </div>
           <div class="col-md-8 chat-box" style={{ padding: "0px", marginTop: "10px" }}>
             <ChatBar status={returnStatus()} nickname={returnNickname()} img={p1} />
-            <div style={{ overflowY: "scroll", overflowX: "hidden", marginBottom: "5px", height: "300px", position: "relative" }}>
+            <div id="chatWindow" style={{ overflowY: "scroll", overflowX: "hidden", marginBottom: "5px", height: "300px", position: "relative" }}>
               <div>{returnMsg()}</div>
             </div>
             <div class="row">
@@ -442,7 +453,7 @@ useEffect(() => {
 
                   {/* CHAT INPUT: this form is used to send the messages in the chat */}
                   <form style={{ width: "100%" }}>
-                    <input onKeyDown={(e) => { handleEnter(e) }} className="input-box" id="chatIn" defaultValue="" type="text" width="70" placeholder="Type your message here..." from={userLogin} to={currChat} />
+                    <input onKeyDown={(e) => { handleEnter(e) }} className="input-box" id="chatIn" defaultValue="" type="text" width="70" placeholder="Type your message here..." from={usernameString} to={currChat} />
                     <Button className="send-button" type="button" variant="danger" onClick={() => { sendMessage(getMessage()) }}>send</Button>
                   </form>
                 </div>
@@ -503,7 +514,7 @@ const getCurrentTimeString = () => {
 
 
 const renderHelper = (prev) => {
-  return !prev;
+  return prev + 1;
 }
 
 function ChatBar(props) {
